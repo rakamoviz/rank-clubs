@@ -25,7 +25,7 @@ class Test(unittest.TestCase):
 				'1. Tarantulas, 6 pts',
 				'2. Lions, 5 pts',
 				'3. FC Awesome, 1 pts',
-				'4. Snakes, 1 pts',
+				'3. Snakes, 1 pts',
 				'5. Grouches, 0 pts'
 			]
 		},

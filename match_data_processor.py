@@ -67,6 +67,12 @@ def _rank_club_points(point_table):
 	ranked_club_points.sort(key=functools.cmp_to_key(_compare_club_points), reverse=True)
 	return ranked_club_points
 
+def _calculate_rank(rank, previous_point, current_point):
+	if previous_point == -1 or current_point == previous_point:
+		return (rank, current_point)
+	else:
+		return (rank + 1, current_point)
+
 def _format_ranked_club_points(ranked_club_points):
 	'''
 	Print the ranking in '{position}. {club}, {point} pts' format
@@ -74,9 +80,18 @@ def _format_ranked_club_points(ranked_club_points):
     Parameters:
         ranked_club_points (list((club, point))):a list of tuple of (club, point), in descending order based on point
 	'''	
-	return ['{}. {}, {} pts'.format(
-		index+1, ranked_club_point[0], ranked_club_point[1]
-	) for index, ranked_club_point in enumerate(ranked_club_points)]		
+
+	rank = 1
+	previous_point = -1
+	formatted_ranked_club_points = []
+
+	for club_point in ranked_club_points:
+		(rank, previous_point) = _calculate_rank(rank, previous_point, club_point[1])
+		formatted_ranked_club_points.append('{}. {}, {} pts'.format(
+			rank, club_point[0], club_point[1]
+		))
+
+	return formatted_ranked_club_points		
 
 def process_match_data(match_data):
 	'''

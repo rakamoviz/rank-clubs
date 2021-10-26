@@ -1,5 +1,5 @@
-cp match_data_processor.py match_data_processor.pyx
-cython -3 match_data_processor.pyx --embed
+pip install cython
+cython -3 match_data_processor.py --embed
 sudo apt-get install python3-dev
 gcc -Os -I /usr/include/python3.8 -o match_data_processor match_data_processor.c -lpython3.8 -lpthread -lm -lutil -ldl
 docker cp match_data_processor c8012a21d8e4:/match_data_processor
