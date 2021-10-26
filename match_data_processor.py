@@ -1,8 +1,10 @@
 import argparse
 import sys
 import re
+import functools
+import os
 
-def calculate_points(score_1, score_2):
+def _calculate_points(score_1, score_2):
 	'''
 	Calculate the points associated to each score in the parameters
 
@@ -21,7 +23,7 @@ def calculate_points(score_1, score_2):
 	else:
 		return (0, 3)
 
-def accumulate_point(point_table, club, point):
+def _accumulate_point(point_table, club, point):
 	'''
 	Accumulate points for a club into point_table.
 
@@ -36,7 +38,20 @@ def accumulate_point(point_table, club, point):
 	else:
 		point_table[club] = point
 
-def calculate_ranking(point_table):
+def _compare_club_points(club_point_1, club_point_2):
+	if club_point_1[1] < club_point_2[1]:
+		return -1
+	elif club_point_1[1] > club_point_2[1]:	
+		return 1
+	else:
+		if club_point_1[0] > club_point_2[0]:
+			return -1
+		elif club_point_1[0] < club_point_2[0]:
+			return 1
+		else:
+			return 0
+
+def _rank_club_points(point_table):
 	'''
 	Rank the clubs according to accumulated points in descending order
 	(i.e.: club with biggest points placed first in the result)
@@ -48,19 +63,20 @@ def calculate_ranking(point_table):
         ranking (list((club, point))):Returns a list of tuple of (club, point), in descending order based on point
 	'''
 
-	ranking = list(point_table.items())
-	ranking.sort(key=lambda club_point : club_point[1], reverse=True)
-	return ranking
+	ranked_club_points = list(point_table.items())
+	ranked_club_points.sort(key=functools.cmp_to_key(_compare_club_points), reverse=True)
+	return ranked_club_points
 
-def print_ranking(ranking):
+def _format_ranked_club_points(ranked_club_points):
 	'''
 	Print the ranking in '{position}. {club}, {point} pts' format
 
     Parameters:
-        ranking (list((club, point))):a list of tuple of (club, point), in descending order based on point
+        ranked_club_points (list((club, point))):a list of tuple of (club, point), in descending order based on point
 	'''	
-	for rank, club_standing in enumerate(ranking):
-		print(f'{rank+1}. {club_standing[0]}, {club_standing[1]} pts')
+	return ['{}. {}, {} pts'.format(
+		index+1, ranked_club_point[0], ranked_club_point[1]
+	) for index, ranked_club_point in enumerate(ranked_club_points)]		
 
 def process_match_data(match_data):
 	'''
@@ -72,7 +88,7 @@ def process_match_data(match_data):
 
 	point_table = {}
 	
-	result_pattern = re.compile("([a-zA-Z ]+) (0|[1-9]+), ([a-zA-Z ]+) (0|[1-9]+)")
+	result_pattern = re.compile('([a-zA-Z ]+) (0|[1-9]+), ([a-zA-Z ]+) (0|[1-9]+)')
 
 	for result in match_data.splitlines():
 		match = result_pattern.match(result)
@@ -83,13 +99,16 @@ def process_match_data(match_data):
 		club_2 = match.group(3)
 		score_2 = int(match.group(4))
 
-		(point_1, point_2) = calculate_points(score_1, score_2)
+		(point_1, point_2) = _calculate_points(score_1, score_2)
 
-		accumulate_point(point_table, club_1, point_1)
-		accumulate_point(point_table, club_2, point_2)
+		_accumulate_point(point_table, club_1, point_1)
+		_accumulate_point(point_table, club_2, point_2)
 
-	ranking = calculate_ranking(point_table)
-	print_ranking(ranking)
+	ranked_club_points = _rank_club_points(point_table)
+	
+	print(os.linesep.join(
+		_format_ranked_club_points(ranked_club_points)
+	))
 	
 def _main():
 	parser = argparse.ArgumentParser(description='Calculate ranking')
@@ -97,10 +116,10 @@ def _main():
 		'-f', '--file', 
 		type=argparse.FileType('r'), 
 		default=sys.stdin, 
-		help="""
+		help='''
 			file to read match results from.
 			If not specified, data will be read from stdin.
-			"""
+			'''
 	)
 	args = parser.parse_args()
 	match_data = args.file.read()
